@@ -1,0 +1,9 @@
+build/
+build_*/
+output/
+output_*/
+*.user
+*.suo
+*.log
+__pycache__/
+.pytest_cache/

@@ -1,0 +1,12 @@
+{
+  "n": 20,
+  "m": 40,
+  "tolerance": 5e-7,
+  "methodTolerance": 1e-8,
+  "maxIterations": 100000,
+  "maxN": 80,
+  "maxM": 160,
+  "tableStrideX": 2,
+  "tableStrideY": 4,
+  "omega": 1.7
+}
