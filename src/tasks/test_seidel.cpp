@@ -196,7 +196,7 @@ TaskResult runTestSeidelTask(const InputData& input, const VariantData& variant)
     task.problemKind = "Тестовая задача Дирихле для уравнения Пуассона";
     task.method = "Метод Зейделя";
     task.ownerHint = "Папулина Юлия";
-    task.status = "success"; 
+    task.status = max_diff < input.methodTolerance ? "success" : "warning"; 
     
     task.note = report.str();
 
