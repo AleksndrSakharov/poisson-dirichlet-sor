@@ -20,6 +20,7 @@ struct GridSolution {
     double k = 0.0;
     int iterations = 0;
     double methodError = 0.0;
+    double initialResidual = 0.0;
     double residual = 0.0;
     bool converged = false;
     std::vector<double> values;
@@ -140,6 +141,7 @@ GridSolution solvePoissonSor(
         }
     }
     applyBoundary(grid, variant);
+    grid.initialResidual = computeResidual(grid, variant);
 
     const double ax = 1.0 / (grid.h * grid.h);
     const double ay = 1.0 / (grid.k * grid.k);
@@ -261,9 +263,11 @@ TaskResult runMainSorTask(const InputData& input, const VariantData& variant) {
          << ", Nmax = " << input.maxIterations << ".\n";
     note << "На основной сетке: N = " << coarse.iterations
          << ", достигнутая точность итерационного метода = " << coarse.methodError
+         << ", ||R^(0)||_max = " << coarse.initialResidual
          << ", ||R||_max = " << coarse.residual << ".\n";
     note << "На контрольной сетке: N2 = " << fine.iterations
          << ", достигнутая точность итерационного метода = " << fine.methodError
+         << ", ||R2^(0)||_max = " << fine.initialResidual
          << ", ||R2||_max = " << fine.residual << ".\n";
     note << "Заданная для контроля точность основной задачи epsilon = " << input.tolerance
          << "; на выбранной сетке получено epsilon_2 = " << maxDiff << ".\n";

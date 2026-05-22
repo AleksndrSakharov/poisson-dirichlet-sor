@@ -79,6 +79,23 @@ TaskResult runTestSorTask(const InputData& input, const VariantData& variant) {
         }
     }
 
+    auto compute_residual = [&]() {
+        double residual = 0.0;
+        for (int i = 1; i < n; ++i) {
+            for (int j = 1; j < m; ++j) {
+                double x = a + i * hx;
+                double y = c + j * hy;
+                double laplacian = (v[i - 1][j] - 2.0 * v[i][j] + v[i + 1][j]) / hx2 +
+                                   (v[i][j - 1] - 2.0 * v[i][j] + v[i][j + 1]) / hy2;
+                double r = std::abs(laplacian + f_test(x, y));
+                if (r > residual) residual = r;
+            }
+        }
+        return residual;
+    };
+
+    double initial_residual = compute_residual();
+
     int iterations = 0;
     double max_diff = 0.0;
 
@@ -107,17 +124,7 @@ TaskResult runTestSorTask(const InputData& input, const VariantData& variant) {
         iterations++;
     } while (max_diff >= input.methodTolerance && iterations < input.maxIterations);
 
-    double max_residual = 0.0;
-    for (int i = 1; i < n; ++i) {
-        for (int j = 1; j < m; ++j) {
-            double x = a + i * hx;
-            double y = c + j * hy;
-            double laplacian = (v[i - 1][j] - 2.0 * v[i][j] + v[i + 1][j]) / hx2 +
-                               (v[i][j - 1] - 2.0 * v[i][j] + v[i][j + 1]) / hy2;
-            double r = std::abs(laplacian + f_test(x, y));
-            if (r > max_residual) max_residual = r;
-        }
-    }
+    double max_residual = compute_residual();
 
     double max_accuracy_error = 0.0;
     double err_x = 0.0;
@@ -166,6 +173,7 @@ TaskResult runTestSorTask(const InputData& input, const VariantData& variant) {
            << "ε_мет = " << input.methodTolerance << " и по числу итераций N_max = " << input.maxIterations << "\n\n"
            << "На решение схемы (СЛАУ) затрачено итераций N = " << iterations 
            << " и достигнута точность итерационного метода ε^(N) = " << max_diff << "\n\n"
+           << "Невязка на начальном приближении ||R^(0)|| = " << initial_residual << "\n"
            << "Схема (СЛАУ) решена с невязкой ||R^(N)|| = " << max_residual << "\n"
            << "для невязки СЛАУ использована норма «максимальная (чебышёвская)»;\n\n"
            << "Тестовая задача должна быть решена с погрешностью не более ε = " << input.tolerance 
