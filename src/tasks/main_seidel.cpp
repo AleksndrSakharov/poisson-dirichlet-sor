@@ -205,11 +205,7 @@ TaskResult runMainSeidelTask(const InputData& input, const VariantData& variant)
     double maxDiff = 0.0;
     int maxI = 0;
     int maxJ = 0;
-    bool compared = false;
-    bool achieved = false;
-
-    while (2 * n <= input.maxN && 2 * m <= input.maxM) {
-        compared = true;
+    if (2 * n <= input.maxN && 2 * m <= input.maxM) {
         coarse = solvePoissonSeidel(n, m, variant, input.methodTolerance, input.maxIterations);
         fine = solvePoissonSeidel(2 * n, 2 * m, variant, input.methodTolerance, input.maxIterations);
 
@@ -228,20 +224,9 @@ TaskResult runMainSeidelTask(const InputData& input, const VariantData& variant)
                 }
             }
         }
-
-        if (maxDiff <= input.tolerance) {
-            achieved = true;
-            break;
-        }
-
-        if (4 * n > input.maxN || 4 * m > input.maxM) {
-            break;
-        }
-        n *= 2;
-        m *= 2;
     }
 
-    if (!compared) {
+    if (coarse.values.empty() || fine.values.empty()) {
         task.status = "warning";
         task.note =
             "Не удалось построить контрольную сетку (2n,2m): увеличьте maxN/maxM или уменьшите начальные n,m.";
@@ -261,7 +246,7 @@ TaskResult runMainSeidelTask(const InputData& input, const VariantData& variant)
     task.accuracy = maxDiff;
     task.maxX = variant.a + maxI * coarse.h;
     task.maxY = variant.c + maxJ * coarse.k;
-    task.status = achieved ? "done" : "warning";
+    task.status = (coarse.converged && fine.converged) ? "done" : "warning";
 
     std::ostringstream note;
     note << "Для решения основной задачи использована сетка n = " << coarse.n
@@ -276,14 +261,14 @@ TaskResult runMainSeidelTask(const InputData& input, const VariantData& variant)
     note << "На контрольной сетке: N2 = " << fine.iterations
          << ", достигнутая точность итерационного метода = " << fine.methodError
          << ", ||R2||_max = " << fine.residual << ".\n";
-    note << "Требуемая точность основной задачи epsilon = " << input.tolerance
-         << "; получено epsilon_2 = " << maxDiff << ".\n";
+    note << "Заданная для контроля точность основной задачи epsilon = " << input.tolerance
+         << "; на выбранной сетке получено epsilon_2 = " << maxDiff << ".\n";
     note << "Максимальное отклонение решений на общих узлах находится в узле i = "
          << maxI << ", j = " << maxJ << " (x = " << std::fixed << std::setprecision(6)
          << task.maxX << ", y = " << task.maxY << ").\n";
     note << "Начальное приближение построено трансфинитной линейной интерполяцией граничных условий.";
-    if (!achieved) {
-        note << "\nЗаданная точность не достигнута до ограничения maxN/maxM; для более точного результата увеличьте maxN/maxM или уменьшите epsilon_met.";
+    if (!coarse.converged || !fine.converged) {
+        note << "\nПредупреждение: итерационный метод не достиг epsilon_met до ограничения Nmax.";
     }
     task.note = note.str();
 
