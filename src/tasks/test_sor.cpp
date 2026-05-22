@@ -44,7 +44,10 @@ TaskResult runTestSorTask(const InputData& input, const VariantData& variant) {
     
     // Relaxation parameter omega (1 < omega < 2 for SOR)
     // Typical value: omega = 1.5, can be adjusted for optimal convergence
-    double omega = input.omega;  // SOR parameter (omega = 1 gives Gauss-Seidel)
+    double omega = input.omega;
+    if (omega <= 0.0 || omega >= 2.0) {
+        omega = 1.7;
+    }
 
     double hx = (b - a) / n;
     double hy = (d - c) / m;
