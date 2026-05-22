@@ -203,7 +203,7 @@ TaskResult runTestSorTask(const InputData& input, const VariantData& variant) {
     TaskResult task;
     task.id = "test-sor";
     task.title = "Тестовая задача, метод верхней релаксации";
-    task.shortTitle = "1. Тест, SOR";
+    task.shortTitle = "2. Тест, МВР";
     task.problemKind = "Тестовая задача Дирихле для уравнения Пуассона";
     task.method = "Метод верхней релаксации (SOR)";
     task.ownerHint = "Романова Василиса";
