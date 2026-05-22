@@ -957,9 +957,14 @@ class LabUI(tk.Tk):
     def _enable_plot_zoom(self, fig, axes):
         axes_list = list(axes if isinstance(axes, (list, tuple)) else [axes])
         initial_limits = []
+        initial_views = []
         for axis in axes_list:
             zlim = axis.get_zlim() if hasattr(axis, "get_zlim") else None
             initial_limits.append((axis.get_xlim(), axis.get_ylim(), zlim))
+            if getattr(axis, "name", "") == "3d":
+                initial_views.append((axis.elev, axis.azim, getattr(axis, "roll", 0)))
+            else:
+                initial_views.append(None)
 
         drag_state = {"axis": None, "x": 0.0, "y": 0.0, "xlim": None, "ylim": None}
 
@@ -976,8 +981,9 @@ class LabUI(tk.Tk):
                 return
             axis = event.inaxes
             scale = 0.8 if event.button == "up" else 1.25
-            axis.set_xlim(*centered_limits(axis.get_xlim(), event.xdata, scale))
-            axis.set_ylim(*centered_limits(axis.get_ylim(), event.ydata, scale))
+            is_3d = getattr(axis, "name", "") == "3d"
+            axis.set_xlim(*centered_limits(axis.get_xlim(), None if is_3d else event.xdata, scale))
+            axis.set_ylim(*centered_limits(axis.get_ylim(), None if is_3d else event.ydata, scale))
             if hasattr(axis, "get_zlim") and hasattr(axis, "set_zlim"):
                 z_left, z_right = axis.get_zlim()
                 z_center = (z_left + z_right) / 2.0
@@ -986,7 +992,11 @@ class LabUI(tk.Tk):
             fig.canvas.draw_idle()
 
         def on_press(event):
-            if event.button != 1 or event.inaxes not in axes_list:
+            if event.inaxes not in axes_list:
+                return
+            is_3d = getattr(event.inaxes, "name", "") == "3d"
+            pan_button = 2 if is_3d else 1
+            if event.button != pan_button:
                 return
             drag_state["axis"] = event.inaxes
             drag_state["x"] = event.x
@@ -1015,11 +1025,17 @@ class LabUI(tk.Tk):
         def on_key(event):
             if event.key not in {"r", "к"}:
                 return
-            for axis, (xlim, ylim, zlim) in zip(axes_list, initial_limits):
+            for axis, (xlim, ylim, zlim), view in zip(axes_list, initial_limits, initial_views):
                 axis.set_xlim(xlim)
                 axis.set_ylim(ylim)
                 if zlim is not None and hasattr(axis, "set_zlim"):
                     axis.set_zlim(zlim)
+                if view is not None:
+                    elev, azim, roll = view
+                    try:
+                        axis.view_init(elev=elev, azim=azim, roll=roll)
+                    except TypeError:
+                        axis.view_init(elev=elev, azim=azim)
             fig.canvas.draw_idle()
 
         fig.canvas.mpl_connect("scroll_event", on_scroll)
@@ -1055,7 +1071,34 @@ class LabUI(tk.Tk):
         ax.set_xlabel("x")
         ax.set_ylabel("y")
         ax.set_zlabel(zlabel)
-        fig.suptitle("Колесо мыши: приблизить/отдалить, левая кнопка: переместить, R: сброс", fontsize=self.fonts["body"].cget("size"))
+        if xs and ys and zs:
+            x_min, x_max = min(xs), max(xs)
+            y_min, y_max = min(ys), max(ys)
+            z_min, z_max = min(zs), max(zs)
+
+            def padded_limits(low, high):
+                span = high - low
+                if abs(span) < 1e-12:
+                    span = 1.0
+                pad = span * 0.06
+                return low - pad, high + pad, span + 2 * pad
+
+            x_low, x_high, x_span = padded_limits(x_min, x_max)
+            y_low, y_high, y_span = padded_limits(y_min, y_max)
+            z_low, z_high, z_span = padded_limits(z_min, z_max)
+            ax.set_xlim(x_low, x_high)
+            ax.set_ylim(y_low, y_high)
+            ax.set_zlim(z_low, z_high)
+            try:
+                ax.set_box_aspect((x_span, y_span, max(z_span, min(x_span, y_span) * 0.25)))
+            except AttributeError:
+                pass
+        ax.view_init(elev=28, azim=-135)
+        ax.set_anchor("C")
+        fig.suptitle(
+            "Колесо мыши: приблизить/отдалить, левая кнопка: вращать, средняя кнопка: переместить, R: сброс",
+            fontsize=self.fonts["body"].cget("size"),
+        )
         self._enable_plot_zoom(fig, ax)
         plt.tight_layout()
         plt.show()
