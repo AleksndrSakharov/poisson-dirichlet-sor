@@ -207,7 +207,7 @@ TaskResult runTestSorTask(const InputData& input, const VariantData& variant) {
     task.problemKind = "Тестовая задача Дирихле для уравнения Пуассона";
     task.method = "Метод верхней релаксации (SOR)";
     task.ownerHint = "Романова Василиса";
-    task.status = "success"; 
+    task.status = max_diff < input.methodTolerance ? "success" : "warning"; 
     
     task.note = report.str();
 
