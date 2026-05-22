@@ -195,7 +195,7 @@ TaskResult runMainSeidelTask(const InputData& input, const VariantData& variant)
     task.shortTitle = "3. Основная, Зейдель";
     task.problemKind = "Основная задача Дирихле для уравнения Пуассона";
     task.method = "Метод Зейделя";
-    task.ownerHint = "Исполнитель 3";
+    task.ownerHint = "Сахаров Александр";
     task.columns = makeMainTaskColumns();
 
     int n = std::max(2, input.n);
