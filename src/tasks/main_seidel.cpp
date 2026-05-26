@@ -207,9 +207,10 @@ TaskResult runMainSeidelTask(const InputData& input, const VariantData& variant)
     double maxDiff = 0.0;
     int maxI = 0;
     int maxJ = 0;
+    const double fineMethodTolerance = input.methodTolerance * 1.0e-2;
     if (2 * n <= input.maxN && 2 * m <= input.maxM) {
         coarse = solvePoissonSeidel(n, m, variant, input.methodTolerance, input.maxIterations);
-        fine = solvePoissonSeidel(2 * n, 2 * m, variant, input.methodTolerance, input.maxIterations);
+        fine = solvePoissonSeidel(2 * n, 2 * m, variant, fineMethodTolerance, input.maxIterations);
 
         maxDiff = 0.0;
         maxI = 0;
@@ -256,6 +257,7 @@ TaskResult runMainSeidelTask(const InputData& input, const VariantData& variant)
          << fine.n << ", 2m = " << fine.m << ".\n";
     note << "Метод: Зейдель (МВР с omega = 1). Критерий остановки по итерациям epsilon_met = "
          << std::scientific << std::setprecision(3) << input.methodTolerance
+         << "; для контрольной сетки epsilon_met-2 = " << fineMethodTolerance
          << ", Nmax = " << input.maxIterations << ".\n";
     note << "На основной сетке: N = " << coarse.iterations
          << ", достигнутая точность итерационного метода = " << coarse.methodError
