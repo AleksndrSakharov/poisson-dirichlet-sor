@@ -96,6 +96,15 @@ TaskResult runTestSorTask(const InputData& input, const VariantData& variant) {
 
     double initial_residual = compute_residual();
 
+    std::vector<std::vector<double>> f_vals(n + 1, std::vector<double>(m + 1, 0.0));
+    for (int i = 1; i < n; ++i) {
+        double x = a + i * hx;
+        for (int j = 1; j < m; ++j) {
+            double y = c + j * hy;
+            f_vals[i][j] = f_test(x, y);
+        }
+    }
+
     int iterations = 0;
     double max_diff = 0.0;
 
@@ -103,22 +112,17 @@ TaskResult runTestSorTask(const InputData& input, const VariantData& variant) {
         max_diff = 0.0;
         for (int i = 1; i < n; ++i) {
             for (int j = 1; j < m; ++j) {
-                double x = a + i * hx;
-                double y = c + j * hy;
-
-                // Compute Gauss-Seidel update first
                 double v_gs = ((v[i - 1][j] + v[i + 1][j]) / hx2 +
                                (v[i][j - 1] + v[i][j + 1]) / hy2 +
-                               f_test(x, y)) / C;
-                
-                // Apply SOR (over-relaxation)
+                               f_vals[i][j]) / C;
+
                 double v_new = v[i][j] + omega * (v_gs - v[i][j]);
 
                 double diff = std::abs(v_new - v[i][j]);
                 if (diff > max_diff) {
                     max_diff = diff;
                 }
-                v[i][j] = v_new; 
+                v[i][j] = v_new;
             }
         }
         iterations++;
